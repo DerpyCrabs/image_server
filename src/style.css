@@ -1,0 +1,134 @@
+html {
+	box-sizing:border-box;
+}
+*,*:before,*:after {
+	box-sizing:inherit;
+}
+html {
+	-ms-text-size-adjust: 100%;
+	-webkit-text-size-adjust: 100%;
+}
+a {
+	background-color: transparent;
+	-webkit-text-decoration-skip: objects;
+}
+a:active,a:hover {
+	outline-width: 0;
+}
+html,body {
+	font-family: Verdana,sans-serif;
+}
+html {
+	overflow-x:hidden;
+}
+.header-elem {
+	width: 13.5%;
+	color: white;
+	background-color: black;
+	/*font-size: 18px;*/
+	font-size: 3vw;
+	border: none;
+	display: inline-block;
+	vertical-align: middle;
+	text-decoration: none;
+	text-align: center;
+	cursor: pointer;
+	line-height: 48px;
+	/* line-height: 6vw; */
+	white-space: nowrap;
+	float: left;
+	margin: auto;
+}
+.page {
+	width: 19% !important;
+}
+.page:hover {
+	background-color: black !important;
+	color: white !important;
+}
+
+.header-elem:hover {
+	background-color: #ccc;
+	color: #000;
+}
+.interval-dropdown {
+	cursor: auto;
+	color: black;
+	background-color: white;
+	display: none;
+	position: absolute;
+	margin: 0;
+	padding: 0;
+	z-index:1;
+	white-space: normal;
+	/* width: 12vw; */
+	width: inherit;
+}
+.dropdown-elem {
+	width: 100%;
+	display: block;
+	padding: 8px;
+	color: black;
+	text-align: center;
+	border: none;
+	white-space: normal;
+	float: none;
+	outline: 0;
+	display: inline-block;
+	vertical-align: middle;
+	text-decoration: none;
+	text-align: center;
+	cursor: pointer;
+	white-space: nowrap;
+	float: left;
+}
+.dropdown-elem:hover {
+	background-color: #ccc;
+	color: #000;
+}
+.dropdown-button {
+	overflow: visible;
+}
+img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+	margin: auto;
+}
+.img-button {
+	float: left;
+	height: 100%;
+	width: 50%;
+	position: absolute;
+}
+.img-div {
+	height: 100%;
+	width: 100%;
+}
+.header:after {
+	content: "";
+	display: table;
+	clear: both;
+}
+.header {
+	margin-top: -48px;
+	height: 48px;
+}
+body {
+	background-color: black;
+	padding: 48px 0 0 0;
+	position: absolute;
+	margin: 0;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	overflow: hidden;
+}
+.hide {
+	display: none!important;
+}
+.show {
+	display: block!important;
+}
