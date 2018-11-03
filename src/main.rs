@@ -41,20 +41,20 @@ fn reshuffle(pages: usize) {
     .join(",");
 }
 
-fn parse_order(order: String) -> Vec<usize> {
+fn parse_order(order: &str) -> Vec<usize> {
   let ids: Result<Vec<usize>, _> = percent_decode(order.as_bytes())
     .decode_utf8_lossy()
-    .split(",")
+    .split(',')
     .map(|id| id.parse())
     .collect();
-  ids.unwrap_or(Vec::new())
+  ids.unwrap_or_default()
 }
 
 fn compose_url(
   shuffle: &Option<String>,
   order: &Option<String>,
   page: usize,
-  interval: &Option<u32>,
+  interval: Option<u32>,
   save: bool,
 ) -> String {
   let mut url = form_urlencoded::Serializer::new("?".to_string());
@@ -64,7 +64,7 @@ fn compose_url(
   if let Some(order) = order {
     url.append_pair("order", order.as_ref());
   };
-  if let Some(_) = shuffle {
+  if shuffle.is_some() {
     url.append_pair("shuffle", "true");
   };
 
@@ -89,18 +89,16 @@ fn img_view_markup(q: Query) -> String {
     ref save_path,
   } = &(*input.read().unwrap());
 
-  let mut parsed_order = parse_order(q.order.clone().unwrap_or("".to_string()));
-  let order = if let Some(_) = q.shuffle {
+  let mut parsed_order = parse_order(q.order.clone().unwrap_or_default().as_str());
+  let order = if q.shuffle.is_some() {
     reshuffle(images.len());
     let order = random_order.lock().unwrap();
-    parsed_order = parse_order(order.clone());
+    parsed_order = parse_order(order.as_str());
     Some(order.clone())
+  } else if parsed_order.is_empty() || parsed_order.len() != images.len() {
+    None
   } else {
-    if parsed_order.len() == 0 || parsed_order.len() != images.len() {
-      None
-    } else {
-      q.order
-    }
+    q.order
   };
 
   let mut page: usize = q.page.unwrap_or(0);
@@ -138,16 +136,16 @@ fn img_view_markup(q: Query) -> String {
     }
   }
 
-  let prev_url = compose_url(&None, &order, prev_page, &q.interval, false);
+  let prev_url = compose_url(&None, &order, prev_page, q.interval, false);
   let url = String::from("/img/") + images[index].as_str();
-  let next_url = compose_url(&None, &order, next_page, &q.interval, false);
+  let next_url = compose_url(&None, &order, next_page, q.interval, false);
 
   markup(
     prev_url.as_str(),
     url.as_str(),
     next_url.as_str(),
     &order,
-    &q.interval,
+    q.interval,
     page,
     &images,
   )
@@ -159,7 +157,7 @@ fn header(
   url: &str,
   next_url: &str,
   order: &Option<String>,
-  interval: &Option<u32>,
+  interval: Option<u32>,
   page: usize,
   images_len: usize,
 ) -> Markup {
@@ -172,16 +170,16 @@ fn header(
           (view_page)"/"(images_len)
       }
       a.header-elem href=(url) { "link" }
-      @if let Some(_) = interval {
-          a.header-elem href=(compose_url(&None, order, page, &None, false)) { "stop" }
+      @if interval.is_some() {
+          a.header-elem href=(compose_url(&None, order, page, None, false)) { "stop" }
       } @else {
           div.dropdown-button.header-elem onclick="dropdown_toggle()" { "loop"
               div.interval-dropdown.hide {
-                  a.dropdown-elem href=(compose_url(&None, order, 0, &Some(500), false)) { ".5s" }
-                  a.dropdown-elem href=(compose_url(&None, order, 0, &Some(1000), false)) { "1s" }
-                  a.dropdown-elem href=(compose_url(&None, order, 0, &Some(2000), false)) { "2s" }
-                  a.dropdown-elem href=(compose_url(&None, order, 0, &Some(5000), false)) { "5s" }
-                  a.dropdown-elem href=(compose_url(&None, order, 0, &Some(10000), false)) { "10s" }
+                  a.dropdown-elem href=(compose_url(&None, order, 0, Some(500), false)) { ".5s" }
+                  a.dropdown-elem href=(compose_url(&None, order, 0, Some(1000), false)) { "1s" }
+                  a.dropdown-elem href=(compose_url(&None, order, 0, Some(2000), false)) { "2s" }
+                  a.dropdown-elem href=(compose_url(&None, order, 0, Some(5000), false)) { "5s" }
+                  a.dropdown-elem href=(compose_url(&None, order, 0, Some(10000), false)) { "10s" }
               }
           }
       }
@@ -194,9 +192,9 @@ fn markup(
   url: &str,
   next_url: &str,
   order: &Option<String>,
-  interval: &Option<u32>,
+  interval: Option<u32>,
   page: usize,
-  images: &Vec<String>,
+  images: &[String],
 ) -> Markup {
   html! {
       (DOCTYPE)
@@ -256,7 +254,7 @@ fn serve_images(address: SocketAddr) {
 
   let img_view = warp::path::end()
     .and(warp::query::query::<Query>())
-    .map(move |q| img_view_markup(q));
+    .map(img_view_markup);
   let routes = images_route.or(img_view).or(index_route);
 
   warp::serve(routes).run(address);
@@ -287,10 +285,7 @@ fn main() {
   let address = matches
     .value_of("address")
     .map(|a| a.parse().expect("Invalid address"))
-    .unwrap_or(SocketAddr::new(
-      IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)),
-      8080,
-    ));
+    .unwrap_or_else(|| SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 8080));
 
   let images_path = matches.value_of("dir").unwrap();
 
@@ -306,13 +301,10 @@ fn main() {
   images.sort_by(|a, b| natord::compare(a.as_str(), b.as_str()));
 
   let save_path = matches.value_of("save").map(|s| s.to_string());
-  match save_path {
-    Some(ref path) => {
-      if !(std::path::Path::new(path.as_str()).exists()) {
-        panic!("Invalid save path")
-      }
+  if let Some(ref path) = save_path {
+    if !(std::path::Path::new(path.as_str()).exists()) {
+      panic!("Invalid save path");
     }
-    None => (),
   }
 
   let mut input_mut = input.write().unwrap();
