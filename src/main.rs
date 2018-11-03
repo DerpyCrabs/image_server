@@ -1,27 +1,18 @@
 #![feature(proc_macro_hygiene)]
 
-extern crate natord;
-#[macro_use]
-extern crate lazy_static;
-#[macro_use]
-extern crate warp;
-extern crate clap;
-extern crate maud;
-#[macro_use]
-extern crate serde_derive;
-extern crate percent_encoding;
-extern crate rand;
-extern crate serde;
-extern crate url;
-
 use clap::{App, Arg};
+use lazy_static::lazy_static;
 use maud::{html, Markup, PreEscaped, DOCTYPE};
+use natord;
 use percent_encoding::percent_decode;
+use rand;
 use rand::Rng;
+use serde_derive::Deserialize;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::Path;
 use std::sync::{Mutex, RwLock};
 use url::form_urlencoded;
+use warp::path;
 use warp::Filter;
 
 lazy_static! {
